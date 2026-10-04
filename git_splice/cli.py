@@ -1,11 +1,11 @@
 """Command-line entry point for `git splice`.
 
-This milestone only wires up enough CLI to be useful for inspection: it
-runs `git diff` in the current repository, parses the result, builds the
+This milestone wires up enough CLI to be useful for inspection: it runs
+`git diff` in the current repository, parses the result, builds the
 hunk adjacency graph, greedily clusters hunks into independent patch
-sets, and prints the resulting stack. The interactive dependency graph
-and commit-writing behaviour described in the project README land in
-later milestones.
+sets, and prints the resulting stack -- either as a one-line-per-hunk
+summary, or (with `--graph`) as an ASCII boxes-and-arrows dependency
+graph. Commit-writing and interactive review land in later milestones.
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ from typing import List, Optional
 from .clustering import cluster_hunks
 from .diff_parser import parse_unified_diff
 from .hunk_graph import HunkGraph
+from .render import render_stack
 
 
 def _run_git_diff(extra_args: List[str]) -> str:
@@ -43,6 +44,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--cached",
         action="store_true",
         help="Inspect the staged diff instead of the working-tree diff.",
+    )
+    parser.add_argument(
+        "--graph",
+        action="store_true",
+        help="Print the proposed stack as an ASCII boxes-and-arrows graph.",
     )
     parser.add_argument(
         "paths",
@@ -91,7 +97,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("No changes found.")
         return 0
 
-    print(summarize(diff_text))
+    if args.graph:
+        file_diffs = parse_unified_diff(diff_text)
+        graph = HunkGraph.build(file_diffs)
+        patch_sets = cluster_hunks(graph)
+        print(render_stack(patch_sets))
+    else:
+        print(summarize(diff_text))
     return 0
 
 

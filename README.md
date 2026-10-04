@@ -54,9 +54,45 @@ git-splice --cached src/
 ```
 
 Each patch set is a group of hunks that the shared-identifier/adjacency
-analysis believes must travel together; turning each patch set into an
-actual commit, and presenting the stack interactively for review before
-writing anything, lands in a later milestone.
+analysis believes must travel together. Pass `--graph` to see the same
+patch sets rendered as an ASCII boxes-and-arrows dependency graph
+instead of the flat hunk listing:
+
+```sh
+git-splice --graph
+```
+
+```
++-------------------+
+| patch set 1       |
+| files: a.py, b.py |
+| hunks: 3          |
++-------------------+
+          |
+          v
++-------------------+
+| patch set 2       |
+| files: c.py       |
+| hunks: 1          |
++-------------------+
+```
+
+Patch sets are otherwise independent, but two of them can still touch
+the same file at different positions; applying them out of order would
+shift the context each hunk expects. The graph captures that as an
+ordering dependency: an arrow points from the patch set that touches a
+shared file earlier to the one that touches it later, labeled with the
+file that creates the dependency. If two patch sets disagree about
+ordering across different shared files (a cycle), the graph still
+renders in a deterministic index-based order and prints a note listing
+the conflict instead of failing. See `git_splice/stack_graph.py` and
+`git_splice/render.py` for the implementation, and
+`tests/test_stack_graph.py` / `tests/test_render.py` for the fixtures
+that pin the behavior down.
+
+Turning each patch set into an actual commit, and presenting the stack
+interactively for review before writing anything, lands in a later
+milestone.
 
 ## Status
 
