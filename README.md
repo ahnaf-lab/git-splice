@@ -118,8 +118,47 @@ they are covered by `tests/test_interactive.py` without needing a real
 TTY; only the thin curses loop that reads actual keypresses requires
 one, so `--interactive` needs to run attached to a real terminal.
 
-Turning each patch set into an actual commit lands in a later
-milestone.
+Once you're happy with the stack, pass `--apply` to write it as a real
+chain of commits on top of `HEAD`, one commit per patch set, in the
+same dependency order the graph displays:
+
+```sh
+git-splice --apply
+```
+
+```
+Wrote 2 commit(s):
+  538b13f18a splice: patch set 1 (f1.py)
+  8512c30608 splice: patch set 2 (f2.py)
+```
+
+`--apply` never edits your working-tree files directly. Each commit's
+tree is built with plain git plumbing (`hash-object`, `update-index`,
+`write-tree`, `commit-tree`) against a throwaway index file, starting
+from `HEAD`'s content and layering on just the hunks committed so far
+for each touched file -- the same reconstruction either produces a
+file's fully-diffed content (once every one of its hunks has landed)
+or an intermediate state (while only some have). Only after every
+commit in the chain exists does it move the branch (or bare `HEAD`, if
+detached) forward and refresh the real index to match, via `git reset
+--mixed`, which also never touches working-tree files -- so the files
+on disk end up exactly where they already were, just now described by
+real history instead of one uncommitted diff. Combine with
+`--interactive` to pick the final order and groupings before they are
+committed:
+
+```sh
+git-splice --interactive --apply
+```
+
+As a safety check, plain `--apply` (without `--cached`) refuses to run
+if the index already has staged changes beyond `HEAD`, since those
+would otherwise be silently folded into the first commit; commit or
+unstage them first. See `git_splice/apply.py` for the reconstruction
+logic (unit-tested without a real repository in `tests/test_apply.py`)
+and the git-plumbing driver (exercised against a real throwaway
+repository, with exact commit-count/message/content assertions, in
+`tests/test_apply_integration.py`).
 
 ## Status
 
