@@ -1,0 +1,24 @@
+diff --git a/a.py b/a.py
+index 83db48f..bf269f4 100644
+--- a/a.py
++++ b/a.py
+@@ -1,2 +1,2 @@
+-x = 1
++x = helper_function()
+@@ -5,2 +5,2 @@
+-y = 2
++y = 3
+diff --git a/b.py b/b.py
+index 1111111..2222222 100644
+--- a/b.py
++++ b/b.py
+@@ -1,1 +1,1 @@
+-z = 0
++z = helper_function()
+diff --git a/c.py b/c.py
+index 3333333..4444444 100644
+--- a/c.py
++++ b/c.py
+@@ -1,1 +1,1 @@
+-w = 0
++w = totally_unrelated_value

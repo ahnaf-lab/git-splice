@@ -1,0 +1,21 @@
+diff --git a/alpha.py b/alpha.py
+index 1111111..2222222 100644
+--- a/alpha.py
++++ b/alpha.py
+@@ -1,1 +1,1 @@
+-value = old_config()
++value = new_config()
+diff --git a/beta.py b/beta.py
+index 3333333..4444444 100644
+--- a/beta.py
++++ b/beta.py
+@@ -20,1 +20,1 @@
+-setup(old_config())
++setup(new_config())
+diff --git a/gamma.py b/gamma.py
+index 5555555..6666666 100644
+--- a/gamma.py
++++ b/gamma.py
+@@ -7,1 +7,1 @@
+-teardown(old_config())
++teardown(new_config())

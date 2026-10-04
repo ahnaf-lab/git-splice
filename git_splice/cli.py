@@ -2,9 +2,10 @@
 
 This milestone only wires up enough CLI to be useful for inspection: it
 runs `git diff` in the current repository, parses the result, builds the
-hunk adjacency graph, and prints a summary of the hunks and the clusters
-they fall into. The interactive dependency graph and commit-writing
-behaviour described in the project README land in later milestones.
+hunk adjacency graph, greedily clusters hunks into independent patch
+sets, and prints the resulting stack. The interactive dependency graph
+and commit-writing behaviour described in the project README land in
+later milestones.
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ import subprocess
 import sys
 from typing import List, Optional
 
+from .clustering import cluster_hunks
 from .diff_parser import parse_unified_diff
 from .hunk_graph import HunkGraph
 
@@ -53,18 +55,17 @@ def build_parser() -> argparse.ArgumentParser:
 def summarize(diff_text: str) -> str:
     file_diffs = parse_unified_diff(diff_text)
     graph = HunkGraph.build(file_diffs)
-    components = graph.connected_components()
+    patch_sets = cluster_hunks(graph)
 
     lines = []
     total_hunks = len(graph.hunks)
-    lines.append(f"{len(file_diffs)} file(s), {total_hunks} hunk(s), {len(components)} cluster(s)")
+    lines.append(
+        f"{len(file_diffs)} file(s), {total_hunks} hunk(s), {len(patch_sets)} patch set(s)"
+    )
 
-    hunks_by_id = {hunk.id: hunk for hunk in graph.hunks}
-    for index, component in enumerate(components, start=1):
-        ordered = sorted(component)
-        lines.append(f"cluster {index}:")
-        for hunk_id in ordered:
-            hunk = hunks_by_id[hunk_id]
+    for patch_set in patch_sets:
+        lines.append(f"patch set {patch_set.index}:")
+        for hunk in patch_set.hunks:
             lines.append(
                 f"  hunk#{hunk.id} {hunk.file_path} "
                 f"@@ -{hunk.old_start},{hunk.old_count} +{hunk.new_start},{hunk.new_count} @@"

@@ -1,0 +1,10 @@
+diff --git a/module.py b/module.py
+index 1234567..89abcde 100644
+--- a/module.py
++++ b/module.py
+@@ -1,2 +1,2 @@
+-first = 1
++first = 11
+@@ -50,2 +50,2 @@
+-last = 99
++last = 100
