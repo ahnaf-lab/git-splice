@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "git-splice"
+version = "0.1.0"
+description = "Slice a messy working-tree diff into a stack of minimal, independently-applicable commits."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+dependencies = []
+
+[project.scripts]
+git-splice = "git_splice.cli:main"
+
+[tool.setuptools]
+packages = ["git_splice"]
