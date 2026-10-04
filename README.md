@@ -90,8 +90,35 @@ the conflict instead of failing. See `git_splice/stack_graph.py` and
 `tests/test_stack_graph.py` / `tests/test_render.py` for the fixtures
 that pin the behavior down.
 
-Turning each patch set into an actual commit, and presenting the stack
-interactively for review before writing anything, lands in a later
+Before any commit gets written, you can review and rearrange the stack
+by hand. Pass `--interactive` (or `-i`) to open an arrow-key terminal UI
+over the same patch sets:
+
+```sh
+git-splice --interactive
+```
+
+```
+[up/down: move, m: merge with next, enter/q: confirm]
+
+> patch set 1 (2 hunk(s)) -- a.py, b.py
+  patch set 2 (1 hunk(s)) -- c.py
+```
+
+Up/down moves the selected patch set, swapping it with its neighbor;
+`m` folds the patch set below the selection into the selected one
+(hunks from both are re-sorted into canonical file/position order so
+the merged result is independent of which side they came from); Enter
+or `q` confirms the stack as currently arranged and prints it. Nothing
+is written to the repository by this command -- it only decides the
+order and grouping that a later milestone will use when creating
+commits. The editing rules themselves (`git_splice/interactive.py`'s
+`ReorderState` and `handle_key`) are plain, terminal-free Python so
+they are covered by `tests/test_interactive.py` without needing a real
+TTY; only the thin curses loop that reads actual keypresses requires
+one, so `--interactive` needs to run attached to a real terminal.
+
+Turning each patch set into an actual commit lands in a later
 milestone.
 
 ## Status

@@ -4,8 +4,10 @@ This milestone wires up enough CLI to be useful for inspection: it runs
 `git diff` in the current repository, parses the result, builds the
 hunk adjacency graph, greedily clusters hunks into independent patch
 sets, and prints the resulting stack -- either as a one-line-per-hunk
-summary, or (with `--graph`) as an ASCII boxes-and-arrows dependency
-graph. Commit-writing and interactive review land in later milestones.
+summary, as an ASCII boxes-and-arrows dependency graph (`--graph`), or
+by first letting the user merge/reorder the patch sets in an arrow-key
+terminal UI (`--interactive`) before printing the result. Commit-writing
+lands in a later milestone.
 """
 
 from __future__ import annotations
@@ -18,6 +20,7 @@ from typing import List, Optional
 from .clustering import cluster_hunks
 from .diff_parser import parse_unified_diff
 from .hunk_graph import HunkGraph
+from .interactive import run_interactive
 from .render import render_stack
 
 
@@ -49,6 +52,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--graph",
         action="store_true",
         help="Print the proposed stack as an ASCII boxes-and-arrows graph.",
+    )
+    parser.add_argument(
+        "-i",
+        "--interactive",
+        action="store_true",
+        help=(
+            "Review the proposed stack in an arrow-key terminal UI before "
+            "printing it: up/down moves the selection, 'm' merges it with "
+            "the patch set below, and Enter or 'q' confirms."
+        ),
     )
     parser.add_argument(
         "paths",
@@ -97,7 +110,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("No changes found.")
         return 0
 
-    if args.graph:
+    if args.interactive:
+        file_diffs = parse_unified_diff(diff_text)
+        graph = HunkGraph.build(file_diffs)
+        patch_sets = cluster_hunks(graph)
+        if not sys.stdin.isatty() or not sys.stdout.isatty():
+            print(
+                "--interactive requires an interactive terminal (no TTY attached).",
+                file=sys.stderr,
+            )
+            return 1
+        patch_sets = run_interactive(patch_sets)
+        print(render_stack(patch_sets))
+    elif args.graph:
         file_diffs = parse_unified_diff(diff_text)
         graph = HunkGraph.build(file_diffs)
         patch_sets = cluster_hunks(graph)
